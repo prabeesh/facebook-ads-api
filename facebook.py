@@ -422,6 +422,42 @@ class AdsAPI(object):
             return self.make_request(path, 'POST', args=args, batch=batch)
         return self.make_request(path, 'GET', args=args, batch=batch)
 
+
+    def get_adreport_stats3(self, account_id, data_columns, date_preset=None,
+                            date_start=None, date_end=None,
+                            time_increment=None, actions_group_by=None,
+                            filters=None, async=False, batch=False):
+        """Returns the ad report stats for the given account."""
+        if date_preset is None and date_start is None and date_end is None:
+            raise BaseException("Either a date_preset or a date_start/end \
+                                must be set when requesting a stats info.")
+        path = 'act_%s/reportstats' % account_id
+        args = {
+            'data_columns': json.dumps(data_columns),
+        }
+        if date_preset:
+            args['date_preset'] = date_preset
+        if date_start and date_end:
+            args['time_interval'] = \
+                self.get_time_interval(date_start, date_end)
+        if time_increment:
+            args['time_increment'] = time_increment
+        if filters:
+            args['filters'] = json.dumps(filters)
+        if actions_group_by:
+            args['actions_group_by'] = json.dumps(actions_group_by)
+        if async:
+            args['async'] = 'true'
+            run_id = self.make_request(path, 'POST', args=args, batch=batch)
+            args['report_run_id'] = run_id 
+            while True:
+                if self.get_async_job_status(run_id).get('async_status') == 'Job Completed' :
+                    break
+            return self.__page_results(path=path,args=args,batch=batch)               
+            
+        return self.make_request(path, 'GET', args=args, batch=batch)
+
+
     # New API
     def get_async_job_status(self, job_id, batch=False):
         """Returns the asynchronously requested job status"""
@@ -955,3 +991,5 @@ class AdsAPI(object):
             if not next_page:
                 break
             response = json.load(urllib2.urlopen(next_page))
+        
+
