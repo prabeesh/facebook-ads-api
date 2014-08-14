@@ -11,6 +11,7 @@ import sys
 import urllib
 import urllib2
 import uuid
+import time
 
 FACEBOOK_API = 'https://graph.facebook.com'
 
@@ -453,8 +454,13 @@ class AdsAPI(object):
             while True:
                 if self.get_async_job_status(run_id).get('async_status') == 'Job Completed' :
                     break
-            return self.__page_results(path=path,args=args,batch=batch)               
-            
+                else:
+                    time.sleep(5)
+            result = []
+            for row in self.__page_results(path=path,args=args,batch=batch):
+                result.append(row)
+            return result
+                            
         return self.make_request(path, 'GET', args=args, batch=batch)
 
 
